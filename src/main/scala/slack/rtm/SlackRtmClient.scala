@@ -18,18 +18,18 @@ import WebSocketClientActor._
 import SlackRtmConnectionActor._
 
 object SlackRtmClient {
-  def apply(token: String, duration: FiniteDuration = 5.seconds)(implicit arf: ActorRefFactory): SlackRtmClient = {
-    new SlackRtmClient(token, duration)
+  def apply(token: String, duration: FiniteDuration = 5.seconds, name: Option[String] = None)(implicit arf: ActorRefFactory): SlackRtmClient = {
+    new SlackRtmClient(token, duration, name)
   }
 }
 
-class SlackRtmClient(token: String, duration: FiniteDuration = 5.seconds)(implicit arf: ActorRefFactory) {
+class SlackRtmClient(token: String, duration: FiniteDuration = 5.seconds, name: Option[String] = None)(implicit arf: ActorRefFactory) {
   implicit val timeout = new Timeout(duration)
   implicit val ec = arf.dispatcher
 
   val apiClient = BlockingSlackApiClient(token, duration)
   val state = RtmState(apiClient.startRealTimeMessageSession())
-  val actor = SlackRtmConnectionActor(token, state, duration)
+  val actor = SlackRtmConnectionActor(token, state, duration, name)
 
   def onEvent(f: (SlackEvent) => Unit): ActorRef = {
     val handler = EventHandlerActor(f)
@@ -81,6 +81,11 @@ object SlackRtmConnectionActor {
 
   def apply(token: String, state: RtmState, duration: FiniteDuration)(implicit arf: ActorRefFactory): ActorRef = {
     arf.actorOf(Props(new SlackRtmConnectionActor(token, state, duration)))
+  }
+
+  def apply(token: String, state: RtmState, duration: FiniteDuration, name: Option[String])(implicit arf: ActorRefFactory): ActorRef = name match {
+    case None => arf.actorOf(Props(classOf[SlackRtmConnectionActor], token, state, duration))
+    case Some(nameStr) => arf.actorOf(Props(classOf[SlackRtmConnectionActor], token, state, duration), nameStr)
   }
 }
 
