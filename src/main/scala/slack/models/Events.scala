@@ -5,6 +5,28 @@ import play.api.libs.json._
 // TODO: Revisit all event objects (some are partial? - specifically channel)
 sealed trait SlackEvent
 
+sealed trait ChannelName {
+  def channel: String
+}
+
+object ChannelName {
+  def unapply(a: Any) = a match {
+    case c: ChannelName => Some(c.channel)
+    case _ => None
+  }
+}
+
+sealed trait UserName {
+  def user: String
+}
+
+object UserName {
+  def unapply(a: Any) = a match {
+    case u: UserName => Some(u.user)
+    case _ => None
+  }
+}
+
 case class Hello (
   `type`: String
 ) extends SlackEvent
@@ -16,14 +38,14 @@ case class Message (
   user: String,
   text: String,
   is_starred: Option[Boolean]
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class SubMessage (
   ts: String,
   user: String,
   text: String,
   is_starred: Option[Boolean]
-) extends SlackEvent
+) extends SlackEvent with UserName
 
 // TODO: Message Sub-types
 case class MessageWithSubtype (
@@ -33,31 +55,31 @@ case class MessageWithSubtype (
   hidden: Option[Boolean],
   event_ts: Option[String],
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class ReactionAdded (
   reaction: String,
   item: JsValue, // TODO: Different item types -- https://api.slack.com/methods/stars.list
   event_ts: String,
   user: String
-) extends SlackEvent
+) extends SlackEvent with UserName
 
 case class ReactionRemoved (
   reaction: String,
   item: JsValue, // TODO: Different item types -- https://api.slack.com/methods/stars.list
   event_ts: String,
   user: String
-) extends SlackEvent
+) extends SlackEvent with UserName
 
 case class UserTyping (
   channel: String,
   user: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class ChannelMarked (
   channel: String,
   ts: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class ChannelCreated (
   channel: Channel
@@ -69,11 +91,11 @@ case class ChannelJoined (
 
 case class ChannelLeft (
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class ChannelDeleted (
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class ChannelRename (
   channel: Channel
@@ -82,12 +104,12 @@ case class ChannelRename (
 case class ChannelArchive (
   channel: String,
   user: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class ChannelUnarchive (
   channel: String,
   user: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class ChannelHistoryChanged (
   latest: Long,
@@ -103,17 +125,17 @@ case class ImCreated (
 case class ImOpened (
   user: String,
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class ImClose (
   user: String,
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class ImMarked (
   channel: String,
   ts: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class ImHistoryChanged (
   latest: Long,
@@ -127,25 +149,25 @@ case class GroupJoined(
 
 case class GroupLeft (
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class GroupOpen (
   user: String,
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class GroupClose (
   user: String,
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName with UserName
 
 case class GroupArchive (
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class GroupUnarchive (
   channel: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class GroupRename (
   channel: Channel
@@ -154,7 +176,7 @@ case class GroupRename (
 case class GroupMarked (
   channel: String,
   ts: String
-) extends SlackEvent
+) extends SlackEvent with ChannelName
 
 case class GroupHistoryChanged (
   latest: Long,
@@ -220,7 +242,7 @@ case class PinRemoved (
 case class PresenceChange (
   user: String,
   presence: String
-) extends SlackEvent
+) extends SlackEvent with UserName
 
 case class ManualPresenceChange (
   presence: String
@@ -243,13 +265,13 @@ case class StarAdded (
   user: String,
   item: JsValue, // TODO: Different item types -- https://api.slack.com/methods/stars.list
   event_ts: String
-) extends SlackEvent
+) extends SlackEvent with UserName
 
 case class StarRemoved (
   user: String,
   item: JsValue, // TODO: Different item types -- https://api.slack.com/methods/stars.list
   event_ts: String
-) extends SlackEvent
+) extends SlackEvent with UserName
 
 case class EmojiChanged (
   event_ts: String
